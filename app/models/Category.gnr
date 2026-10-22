@@ -1,0 +1,8 @@
+model Category {
+    table = 'categories';
+    timestamps = true;
+    fillable = ['code', 'name'];
+
+    string code;
+    string name;
+}

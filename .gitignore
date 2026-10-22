@@ -1,0 +1,8 @@
+.gungnir/
+.env
+build/
+storage/*.sqlite
+storage/*.sqlite-*
+storage/*.db
+*.log
+.DS_Store

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · Gungnir Inventory</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+    body { background: #f7f8fa; color: #18232f; margin: 0; }
+    main { max-width: 1120px; margin: 52px auto; padding: 0 20px; }
+    a { color: #174db4; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    p { color: #58677a; }
+    .table-wrap { overflow-x: auto; background: white; border: 1px solid #e3e8ee; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 15px 18px; border-bottom: 1px solid #edf0f4; }
+    th { font-size: 0.8rem; text-transform: uppercase; color: #64748b; }
+    td { font-size: 0.94rem; }
+    .empty { padding: 32px; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/">← Dashboard</a>
+    <h1>Products</h1>
+    <p>Read-only catalog · prices are stored as integer minor currency units.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Category ID</th><th>Price (minor)</th><th>In stock</th><th>Reorder at</th></tr></thead>
+        <tbody>
+        @forelse(products as product)
+          <tr><td>{{ product.sku }}</td><td>{{ product.name }}</td><td>{{ product.category_id }}</td><td>{{ product.unit_price_minor }}</td><td>{{ product.stock_on_hand }}</td><td>{{ product.reorder_level }}</td></tr>
+        @empty
+          <tr><td colspan="6" class="empty">No products yet. Product creation will be added after authentication and stock-write controls.</td></tr>
+        @endforelse
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

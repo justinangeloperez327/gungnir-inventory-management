@@ -1,0 +1,18 @@
+migration CreateProductsTable {
+    up() {
+        Table::create('products', (table) => {
+            table.id();
+            table.foreignId('category_id');
+            table.string('sku', 64).unique();
+            table.string('name', 200);
+            table.integer('unit_price_minor');
+            table.integer('stock_on_hand');
+            table.integer('reorder_level');
+            table.boolean('active');
+            table.timestamps();
+            table.foreign('category_id').references('id').on('categories');
+        });
+    }
+
+    down() { Table::dropIfExists('products'); }
+}

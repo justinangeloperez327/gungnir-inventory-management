@@ -1,0 +1,15 @@
+migration CreateStockMovementsTable {
+    up() {
+        Table::create('stock_movements', (table) => {
+            table.id();
+            table.foreignId('product_id');
+            table.integer('quantity_delta');
+            table.string('reason', 32);
+            table.string('reference', 64);
+            table.timestamps();
+            table.foreign('product_id').references('id').on('products');
+        });
+    }
+
+    down() { Table::dropIfExists('stock_movements'); }
+}

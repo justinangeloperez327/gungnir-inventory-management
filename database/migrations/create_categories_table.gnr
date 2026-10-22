@@ -1,0 +1,12 @@
+migration CreateCategoriesTable {
+    up() {
+        Table::create('categories', (table) => {
+            table.id();
+            table.string('code', 32).unique();
+            table.string('name', 128);
+            table.timestamps();
+        });
+    }
+
+    down() { Table::dropIfExists('categories'); }
+}

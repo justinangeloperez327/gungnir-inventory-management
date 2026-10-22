@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color-scheme: light; }
+    body { margin: 0; background: #f7f8fa; color: #18232f; }
+    header { background: #fff; border-bottom: 1px solid #e3e8ee; padding: 22px max(20px, calc((100vw - 960px) / 2)); font-weight: 700; }
+    main { max-width: 960px; margin: 72px auto; padding: 0 20px; }
+    h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.04em; }
+    p { color: #58677a; line-height: 1.7; }
+    .card { background: #fff; padding: 28px; margin-top: 28px; border: 1px solid #e3e8ee; border-radius: 12px; }
+    a { display: inline-block; color: #174db4; font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    small { color: #657387; }
+  </style>
+</head>
+<body>
+  <header>Gungnir Inventory</header>
+  <main>
+    <small>APPLICATION FOUNDATION · GROUP 1</small>
+    <h1>Inventory management, built with Gungnir.</h1>
+    <p>A native C++23 server and a structured Gungnir application. Product browsing is enabled; stock mutations and account access controls are intentionally reserved for later groups.</p>
+    <section class="card">
+      <h2>Product catalog</h2>
+      <p>Review the current product records from SQLite.</p>
+      <a href="/products">Browse products →</a>
+    </section>
+    <section class="card">
+      <h2>Developer endpoints</h2>
+      <p><a href="/api/products">GET /api/products</a></p>
+      <p><a href="/health">GET /health</a></p>
+    </section>
+  </main>
+</body>
+</html>

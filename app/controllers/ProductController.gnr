@@ -1,0 +1,14 @@
+import app.models.Product;
+
+controller ProductController {
+    index() {
+        return view('products/index', {
+            title: 'Products',
+            products: Product::orderBy('name').limit(100).get()
+        });
+    }
+
+    apiIndex() {
+        return json(Product::orderBy('id').limit(100).get());
+    }
+}

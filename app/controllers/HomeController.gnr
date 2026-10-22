@@ -1,0 +1,10 @@
+controller HomeController {
+    Response index() {
+        return view('dashboard', {title: 'Gungnir Inventory'});
+    }
+
+    Response health() {
+        // Process liveness only. This does not prove database readiness.
+        return json({status: 'ok', service: 'gungnir-inventory-management'});
+    }
+}

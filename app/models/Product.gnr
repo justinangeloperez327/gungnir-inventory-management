@@ -1,0 +1,14 @@
+model Product {
+    table = 'products';
+    timestamps = true;
+    fillable = ['category_id', 'sku', 'name', 'unit_price_minor', 'stock_on_hand', 'reorder_level', 'active'];
+    casts = {'active': 'bool'};
+
+    int category_id;
+    string sku;
+    string name;
+    int unit_price_minor;
+    int stock_on_hand;
+    int reorder_level;
+    bool active;
+}

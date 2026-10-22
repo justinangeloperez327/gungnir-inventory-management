@@ -1,0 +1,10 @@
+model StockMovement {
+    table = 'stock_movements';
+    timestamps = true;
+    fillable = ['product_id', 'quantity_delta', 'reason', 'reference'];
+
+    int product_id;
+    int quantity_delta;
+    string reason;
+    string reference;
+}
