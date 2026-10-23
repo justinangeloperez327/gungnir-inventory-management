@@ -8,13 +8,13 @@ def source(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-class Group2ContractTests(unittest.TestCase):
+class Group3ContractTests(unittest.TestCase):
     def test_structured_project_marker(self):
         self.assertIn("profile=structured", source(".gungnir-project"))
 
     def test_only_expected_public_endpoints(self):
         routes = source("routes/web.gnr")
-        self.assertEqual(routes.count("Route::"), 10)
+        self.assertEqual(routes.count("Route::"), 21)
         self.assertIn("Route::get('/health', HomeController::health);", routes)
         self.assertIn("Route::get('/login', AuthController::index);", routes)
         self.assertIn("Route::post('/login', AuthController::store)", routes)
@@ -23,7 +23,13 @@ class Group2ContractTests(unittest.TestCase):
             self.assertIn("middleware(RequireLoginMiddleware)", route)
         self.assertIn("RequireAdminMiddleware", routes)
         self.assertIn("RequireManagerMiddleware", routes)
-        self.assertNotIn("Route::post('/products", routes)
+        for path in ("/api/categories", "/api/products"):
+            self.assertIn(f"Route::post('{path}'", routes)
+        for line in routes.splitlines():
+            if line.startswith(("Route::post('/api/categories", "Route::put('/api/categories",
+                                "Route::delete('/api/categories", "Route::post('/api/products",
+                                "Route::put('/api/products", "Route::delete('/api/products")):
+                self.assertIn("middleware(RequireManagerMiddleware)", line)
 
     def test_schema_dependency_order(self):
         files = sorted(p.name for p in (ROOT / "database/migrations").glob("*.gnr"))
@@ -54,10 +60,21 @@ class Group2ContractTests(unittest.TestCase):
                          [bootstrap.index(part) for part in order])
         self.assertIn("auth.logout(request)", source("app/controllers/AuthController.gnr"))
 
-    def test_no_inventory_write_paths(self):
+    def test_stock_writes_are_still_disabled(self):
         controllers = "\n".join(f.read_text(encoding="utf-8") for f in (ROOT / "app/controllers").glob("*.gnr"))
-        for forbidden in ("::create(", ".save(", ".remove(", "::update(", "::delete("):
-            self.assertNotIn(forbidden, controllers)
+        product = source("app/controllers/ProductController.gnr")
+        self.assertIn("stock_on_hand: 0", product)
+        self.assertNotIn("request.input('stock_on_hand')", product)
+        self.assertNotIn("'stock_on_hand': '", product)
+        self.assertNotIn("stock_on_hand", source("app/models/Product.gnr").split("fillable = ")[1].split(";")[0])
+        self.assertNotIn("Route::post('/api/stock", source("routes/web.gnr"))
+
+    def test_cursor_bounds(self):
+        for name in ("ProductController", "CategoryController"):
+            body = source(f"app/controllers/{name}.gnr")
+            self.assertIn(".limit(21).get()", body)
+            self.assertIn(".take(20)", body)
+            self.assertIn("next_cursor", body)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,77 @@
+import app.models.Category;
+import app.models.Product;
+
+controller CategoryController {
+    index(Request request) {
+        let categories = Category::orderBy('code').limit(21).get();
+        if (request.query('after') != '') {
+            categories = Category::where('code', '>', request.query('after')).orderBy('code').limit(21).get();
+        }
+        const more = categories.count() > 20;
+        const page = categories.take(20);
+        let next = '';
+        if (more) { next = page.last().code; }
+        return view('categories/index', {
+            title: 'Categories',
+            csrf: request.session().get('_gungnir_csrf_token'),
+            categories: page, more: more, next: next
+        });
+    }
+
+    apiIndex(Request request) {
+        let categories = Category::orderBy('code').limit(21).get();
+        if (request.query('after') != '') {
+            categories = Category::where('code', '>', request.query('after')).orderBy('code').limit(21).get();
+        }
+        const more = categories.count() > 20;
+        const page = categories.take(20);
+        let next = '';
+        if (more) { next = page.last().code; }
+        return json({data: page, has_more: more, next_cursor: next});
+    }
+
+    show(Category category) { return json(category); }
+
+    store(Request request) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        if (!request.isJson()) { return text('JSON required', 415); }
+        const data = request.validate({
+            'code': 'required|string|max:32|unique:categories,code',
+            'name': 'required|string|max:128'
+        });
+        return json(Category::create(data), 201);
+    }
+
+    update(Request request, Category category) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        if (!request.isJson()) { return text('JSON required', 415); }
+        request.validate({
+            'code': 'required|string|max:32',
+            'name': 'required|string|max:128'
+        });
+        if (Category::where('code', request.input('code')).where('id', '!=', category.id).count() > 0) {
+            return json({error: 'Category code already exists'}, 409);
+        }
+        let current = Category::findOrFail(category.id);
+        current.code = request.input('code');
+        current.name = request.input('name');
+        current.save();
+        return json(current);
+    }
+
+    destroy(Request request, Category category) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        if (Product::where('category_id', category.id).count() > 0) {
+            return json({error: 'Cannot delete a category with products'}, 409);
+        }
+        let current = Category::findOrFail(category.id);
+        current.remove();
+        return noContent();
+    }
+}

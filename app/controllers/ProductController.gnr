@@ -1,15 +1,97 @@
 import app.models.Product;
+import app.models.Category;
 
 controller ProductController {
     index(Request request) {
+        let products = Product::where('active', true).orderBy('sku').limit(21).get();
+        if (request.query('after') != '') {
+            products = Product::where('active', true).where('sku', '>', request.query('after')).orderBy('sku').limit(21).get();
+        }
+        const more = products.count() > 20;
+        const page = products.take(20);
+        let next = '';
+        if (more) { next = page.last().sku; }
         return view('products/index', {
             title: 'Products',
             csrf: request.session().get('_gungnir_csrf_token'),
-            products: Product::orderBy('name').limit(100).get()
+            products: page, more: more, next: next
         });
     }
 
-    apiIndex() {
-        return json(Product::orderBy('id').limit(100).get());
+    apiIndex(Request request) {
+        let products = Product::where('active', true).orderBy('sku').limit(21).get();
+        if (request.query('after') != '') {
+            products = Product::where('active', true).where('sku', '>', request.query('after')).orderBy('sku').limit(21).get();
+        }
+        const more = products.count() > 20;
+        const page = products.take(20);
+        let next = '';
+        if (more) { next = page.last().sku; }
+        return json({data: page, has_more: more, next_cursor: next});
+    }
+
+    show(Product product) { return json(product); }
+
+    store(Request request) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        if (!request.isJson()) { return text('JSON required', 415); }
+        const data = request.validate({
+            'sku': 'required|string|max:64|unique:products,sku',
+            'name': 'required|string|max:200',
+            'category_id': 'required|integer|min:1|exists:categories,id',
+            'unit_price_minor': 'required|integer|min:0|max:2147483647',
+            'reorder_level': 'required|integer|min:0|max:2147483647'
+        });
+        const created = Product::create({
+            sku: data.get('sku'),
+            name: data.get('name'),
+            category_id: data.get('category_id'),
+            unit_price_minor: data.get('unit_price_minor'),
+            reorder_level: data.get('reorder_level'),
+            stock_on_hand: 0,
+            active: true
+        });
+        return json(created, 201);
+    }
+
+    update(Request request, Product product) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        if (!request.isJson()) { return text('JSON required', 415); }
+        const data = request.validate({
+            'sku': 'required|string|max:64',
+            'name': 'required|string|max:200',
+            'category_id': 'required|integer|min:1|exists:categories,id',
+            'unit_price_minor': 'required|integer|min:0|max:2147483647',
+            'reorder_level': 'required|integer|min:0|max:2147483647'
+        });
+        if (Product::where('sku', request.input('sku')).where('id', '!=', product.id).count() > 0) {
+            return json({error: 'SKU already exists'}, 409);
+        }
+        Product::where('id', product.id).update(data);
+        return json(Product::findOrFail(product.id));
+    }
+
+    destroy(Request request, Product product) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        let current = Product::findOrFail(product.id);
+        current.active = false;
+        current.save();
+        return noContent();
+    }
+
+    restore(Request request, Product product) {
+        const actor = request.user();
+        if (actor == null) { return text('Unauthenticated', 401); }
+        if (!actor.role('admin') && !actor.role('manager')) { return text('Forbidden', 403); }
+        let current = Product::findOrFail(product.id);
+        current.active = true;
+        current.save();
+        return json(current);
     }
 }

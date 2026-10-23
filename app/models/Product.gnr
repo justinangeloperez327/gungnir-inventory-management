@@ -1,7 +1,9 @@
 model Product {
     table = 'products';
     timestamps = true;
-    fillable = ['category_id', 'sku', 'name', 'unit_price_minor', 'stock_on_hand', 'reorder_level', 'active'];
+    // Mass assignment of stock or archived status is forbidden: stock writes
+    // require the Group 4 transactional ledger service.
+    fillable = ['category_id', 'sku', 'name', 'unit_price_minor', 'reorder_level'];
     casts = {'active': 'bool'};
 
     int category_id;

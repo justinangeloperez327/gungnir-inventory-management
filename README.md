@@ -2,7 +2,7 @@
 
 A native C++23 inventory management application written in Gungnir's structured `.gnr` language.
 
-> **Status:** Group 2 authentication prototype. SQLite users, credential checking, session login/logout, CSRF and role-protected routes are included. Stock-changing operations remain intentionally unavailable. **Do not deploy publicly:** sessions are currently process-local, and production security controls are incomplete.
+> **Status:** Group 3 catalog CRUD prototype. Authenticated users browse products and categories; managers/admins can maintain metadata. Product archives retain history. Stock-changing operations remain unavailable. **Do not deploy publicly:** sessions are process-local and production security controls are incomplete.
 
 ## Requirements
 
@@ -44,7 +44,7 @@ The provisioning script prompts for an email, name and password (12–128 charac
 | --- | --- | --- |
 | GET | `/` | Authenticated dashboard |
 | GET | `/products` | Authenticated product list |
-| GET | `/api/products` | Authenticated JSON list (first 100 products) |
+| GET | `/api/products` | Authenticated cursor-paginated product list (20/page) |
 | GET | `/health` | Public process-level health (not database readiness) |
 | GET | `/login` | Session + CSRF sign-in form |
 | POST | `/login` | Credential sign-in (rate limited) |
@@ -52,8 +52,21 @@ The provisioning script prompts for an email, name and password (12–128 charac
 | GET | `/api/me` | Authenticated public user identity |
 | GET | `/api/management/status` | Admin / manager authorization check |
 | GET | `/api/admin/status` | Admin-only authorization check |
+| GET | `/categories` | Categories page (20/cursor) |
+| GET | `/api/categories` | Category list (20/cursor) |
+| GET | `/api/categories/{category}` | Category detail |
+| POST | `/api/categories` | Create category (manager/admin) |
+| PUT | `/api/categories/{category}` | Update category (manager/admin) |
+| DELETE | `/api/categories/{category}` | Delete category only when empty |
+| GET | `/api/products/{product}` | Product detail including archives |
+| POST | `/api/products` | Create zero-stock product (manager/admin) |
+| PUT | `/api/products/{product}` | Update product metadata (manager/admin) |
+| DELETE | `/api/products/{product}` | Archive product (manager/admin) |
+| POST | `/api/products/{product}/restore` | Reactivate archived product |
 
-The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). No stock changes are accepted until we have transactional services, concurrency tests, input validation, and authentication. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
+Catalog create/update calls require JSON bodies and a session CSRF token in the `X-CSRF-Token` header. `after` paginates by unique category code or SKU; responses expose `data`, `has_more`, and `next_cursor`. Catalog CRUD does not change stock quantities.
+
+The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). No stock movements are accepted before Group 4 transactional services, concurrent stock validation, and auditability. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
 
 ## Verify
 

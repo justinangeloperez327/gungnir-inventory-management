@@ -63,5 +63,7 @@ jobs:
           python3 scripts/provision_user.py --role viewer --ci-test-fixture
           python3 scripts/provision_user.py --role manager --ci-test-fixture
           python3 scripts/provision_user.py --role admin --ci-test-fixture
-      - name: Smoke test native application
+      - name: Smoke test native authentication
         run: python3 scripts/smoke.py
+      - name: Verify catalog CRUD and pagination over HTTP
+        run: python3 scripts/catalog_smoke.py

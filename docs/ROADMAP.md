@@ -6,7 +6,7 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 | --- | --- | --- |
 | 1 | Application SDK bootstrap, schema, read-only pages/API, CI | Native build, migrations, HTTP smoke on SQLite |
 | 2 | User accounts, login/logout, roles and protected routes | Compiler, native build, CSRF/session, role tests |
-| 3 | Product/category CRUD and validation | Unique SKUs, invalid input rejected, transaction tests |
+| 3 | Product/category CRUD and validation | Role/CSRF enforcement, uniqueness, FK integrity, cursor bounds and stock isolation |
 | 4 | Inventory receipts, issues, returns and corrections | Atomic stock + ledger, no negative stock, concurrency tests |
 | 5 | Warehouse/location tracking | Correct location-level quantities and transfers |
 | 6 | Suppliers, purchase orders and receiving | PO receipt creates audited movements |
@@ -17,6 +17,10 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 | 11 | Audit trails, observability, backup/restore | Actor attribution, structured logs, restore drill |
 | 12 | Security, load, accessibility and production packaging | End-to-end test matrix, release checklist |
 
-## Progress\n\nGroup 1 passed native CI. Group 2 implementation adds SQLite users, local account provisioning, session auth, CSRF and protected routes. Confirm the Group 2 workflow run before considering this group accepted.\n\n## Constraints
+## Progress
+
+Groups 1–2 passed native CI. Group 3 introduces category/product metadata CRUD, archive and restore, protected writes, validation and deterministic cursor pagination. Full Group 3 acceptance requires SQLite-backed API smoke tests.
+
+## Constraints
 
 Use Gungnir for application logic and native runtime, SQLite in the first implementation, Spear for simple SSR pages. Do not add Next.js, React or Node dependencies until a concrete frontend requirement justifies them. Node 24 applies if a Node-based frontend is later introduced. Do not automatically deploy or publish releases.

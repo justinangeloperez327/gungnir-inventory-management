@@ -6,7 +6,7 @@
 - `products`: SKU (unique), category, name, integer unit price in the currency's minor units, stock-on-hand counter, reorder level, active flag.
 - `stock_movements`: append-only intended audit journal; quantity delta, reason, reference and product foreign key.
 
-## Write-path invariants (planned for Group 3 onwards)
+## Write-path invariants (stock changes planned for Group 4 onwards)
 
 1. Stock may never become negative unless an explicitly authorized backorder policy is introduced.
 2. A stock increase or decrease and its ledger entry must commit **atomically** in one database transaction. Never update the counter without its audit entry.
@@ -16,6 +16,16 @@
 6. Stored money values are integers; currency is not yet modeled. Do not assume minor units imply AED for every product.
 7. Product deactivation should preserve historical ledger entries. Permanent deletion of referenced products should be disallowed.
 8. The first product list is deliberately limited to 100 entries. Add pagination and search before larger datasets.
+
+## Catalog CRUD (Group 3)
+
+- Category code and product SKU are unique database-indexed identifiers. Friendly uniqueness prechecks supplement, not replace, database constraints.
+- Managers/admins may create/update categories and product metadata. Categories linked to any products cannot be removed.
+- All products start with zero stock; product deletion archives with active=false, preserving ledger history. A separate restore endpoint reactivates.
+- Stock and active fields are not mass-assignable, and untrusted writes cannot alter stock.
+- POST/PUT/PATCH mutation requests require a valid session, role, CSRF, and JSON body. Money uses nonnegative integer minor units.
+- Category-code and product-SKU cursor pagination has 20 entries per page and explicit has_more/next_cursor.
+- Full stock movement and quantity changes remain reserved for Group 4.
 
 ## User accounts (Group 2)
 

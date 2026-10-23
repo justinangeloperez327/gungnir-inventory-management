@@ -73,9 +73,9 @@ def check_login(role, expected_manager, expected_admin):
     assert "password_hash" not in body and "password" not in body
 
     status, body = fetch(opener, "/products")
-    assert status == 200 and "No products yet" in body
+    assert status == 200 and "<h1>Products</h1>" in body
     status, body = fetch(opener, "/api/products")
-    assert status == 200 and json.loads(body) == []
+    assert status == 200 and isinstance(json.loads(body)["data"], list)
 
     assert fetch(opener, "/api/management/status")[0] == expected_manager
     assert fetch(opener, "/api/admin/status")[0] == expected_admin

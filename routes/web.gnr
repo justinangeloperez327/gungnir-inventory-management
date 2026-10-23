@@ -5,7 +5,20 @@ Route::post('/logout', AuthController::destroy).middleware(RequireLoginMiddlewar
 
 Route::get('/', HomeController::index).middleware(RequireLoginMiddleware);
 Route::get('/products', ProductController::index).middleware(RequireLoginMiddleware);
-Route::get('/api/products', ProductController::apiIndex).middleware(RequireLoginMiddleware);
+Route::get('/categories', CategoryController::index).middleware(RequireLoginMiddleware);
 Route::get('/api/me', AuthController::me).middleware(RequireLoginMiddleware);
 Route::get('/api/management/status', AuthController::managerStatus).middleware(RequireManagerMiddleware);
 Route::get('/api/admin/status', AuthController::adminStatus).middleware(RequireAdminMiddleware);
+
+Route::get('/api/categories', CategoryController::apiIndex).middleware(RequireLoginMiddleware);
+Route::post('/api/categories', CategoryController::store).middleware(RequireManagerMiddleware);
+Route::get('/api/categories/{category}', CategoryController::show).middleware(RequireLoginMiddleware);
+Route::put('/api/categories/{category}', CategoryController::update).middleware(RequireManagerMiddleware);
+Route::delete('/api/categories/{category}', CategoryController::destroy).middleware(RequireManagerMiddleware);
+
+Route::get('/api/products', ProductController::apiIndex).middleware(RequireLoginMiddleware);
+Route::post('/api/products', ProductController::store).middleware(RequireManagerMiddleware);
+Route::get('/api/products/{product}', ProductController::show).middleware(RequireLoginMiddleware);
+Route::put('/api/products/{product}', ProductController::update).middleware(RequireManagerMiddleware);
+Route::delete('/api/products/{product}', ProductController::destroy).middleware(RequireManagerMiddleware);
+Route::post('/api/products/{product}/restore', ProductController::restore).middleware(RequireManagerMiddleware);
