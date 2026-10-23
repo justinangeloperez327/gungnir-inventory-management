@@ -20,9 +20,9 @@ migration CreateWarehouseLocationsTable {
             table.id();
             table.foreignId('product_id');
             table.foreignId('location_id');
+            table.string('balance_key', 64).unique();
             table.integer('quantity');
             table.timestamps();
-            table.unique(['product_id', 'location_id']);
             table.foreign('product_id').references('id').on('products');
             table.foreign('location_id').references('id').on('warehouse_locations');
         });

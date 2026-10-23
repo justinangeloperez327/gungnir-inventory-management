@@ -1,9 +1,10 @@
 model LocationBalance {
     table = 'location_balances';
     timestamps = true;
-    fillable = ['product_id', 'location_id', 'quantity'];
+    fillable = ['product_id', 'location_id', 'balance_key', 'quantity'];
 
     int product_id;
     int location_id;
+    string balance_key;
     int quantity;
 }

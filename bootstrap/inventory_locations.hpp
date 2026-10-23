@@ -27,11 +27,11 @@ Response handle(F&& fn) {
     catch (const std::exception&) { return failure(400, "Invalid warehouse request"); }
 }
 
-void require_reader(const Request& request) {
+inline void require_reader(const Request& request) {
     if (!request.authenticated()) throw ApiFailure{401, "Unauthenticated"};
 }
 
-std::int64_t require_manager(const Request& request) {
+inline std::int64_t require_manager(const Request& request) {
     const auto* actor = request.user();
     if (!actor) throw ApiFailure{401, "Unauthenticated"};
     if (!actor->role("admin") && !actor->role("manager"))
@@ -45,7 +45,7 @@ std::int64_t require_manager(const Request& request) {
     } catch (...) { throw ApiFailure{403, "Invalid authenticated identity"}; }
 }
 
-const Json& object_body(Request& request, std::initializer_list<std::string_view> allowed) {
+inline const Json& object_body(Request& request, std::initializer_list<std::string_view> allowed) {
     if (!request.is_json()) throw ApiFailure{415, "JSON required"};
     const Json& body = request.json();
     if (!body.is_object()) throw ApiFailure{422, "A JSON object is required"};
@@ -56,7 +56,7 @@ const Json& object_body(Request& request, std::initializer_list<std::string_view
     return body;
 }
 
-std::string code_field(const Json& body) {
+inline std::string code_field(const Json& body) {
     const auto code = text_field(body, "code", 32);
     for (unsigned char c : code)
         if (!std::isalnum(c) && c != '-' && c != '_')
@@ -64,7 +64,7 @@ std::string code_field(const Json& body) {
     return code;
 }
 
-std::int64_t route_id(const Request& request, std::string_view name) {
+inline std::int64_t route_id(const Request& request, std::string_view name) {
     const auto id = std::string{request.parameter(std::string{name})};
     if (id.empty() || id.size() > 10 ||
         id.find_first_not_of("0123456789") != std::string::npos)
@@ -75,20 +75,20 @@ std::int64_t route_id(const Request& request, std::string_view name) {
     return value;
 }
 
-Json object_row(const AttributeMap& row) {
+inline Json object_row(const AttributeMap& row) {
     Json::Object result;
     for (const auto& [key, value] : row)
         result.emplace(key, gungnir::http::make_json(value));
     return Json::object(std::move(result));
 }
 
-Json rows_json(const std::vector<AttributeMap>& rows) {
+inline Json rows_json(const std::vector<AttributeMap>& rows) {
     Json::Array result;
     for (const auto& row : rows) result.push_back(object_row(row));
     return Json::array(std::move(result));
 }
 
-std::int64_t product_total(const ConnectionPtr& connection, std::int64_t product,
+inline std::int64_t product_total(const ConnectionPtr& connection, std::int64_t product,
                            bool require_active = true) {
     const auto result = connection->execute(
         "SELECT stock_on_hand, active FROM products WHERE id = ?", {product});
@@ -101,7 +101,7 @@ std::int64_t product_total(const ConnectionPtr& connection, std::int64_t product
     return total;
 }
 
-void active_location(const ConnectionPtr& connection, std::int64_t location) {
+inline void active_location(const ConnectionPtr& connection, std::int64_t location) {
     const auto found = connection->execute(
         "SELECT l.active AS location_active, w.active AS warehouse_active "
         "FROM warehouse_locations l JOIN warehouses w ON w.id=l.warehouse_id "
@@ -112,14 +112,14 @@ void active_location(const ConnectionPtr& connection, std::int64_t location) {
         throw ApiFailure{409, "Location or warehouse is inactive"};
 }
 
-std::int64_t location_total(const ConnectionPtr& connection, std::int64_t product) {
+inline std::int64_t location_total(const ConnectionPtr& connection, std::int64_t product) {
     const auto result = connection->execute(
         "SELECT COALESCE(SUM(quantity), 0) AS total "
         "FROM location_balances WHERE product_id = ?", {product});
     return row_number(result.rows.front(), "total");
 }
 
-std::int64_t at_location(const ConnectionPtr& connection, std::int64_t product,
+inline std::int64_t at_location(const ConnectionPtr& connection, std::int64_t product,
                          std::int64_t location) {
     const auto rows = connection->execute(
         "SELECT quantity FROM location_balances WHERE product_id=? AND location_id=?",
@@ -127,7 +127,7 @@ std::int64_t at_location(const ConnectionPtr& connection, std::int64_t product,
     return rows.rows.empty() ? 0 : row_number(rows.rows.front(), "quantity");
 }
 
-void write_location(const ConnectionPtr& connection, std::int64_t product,
+inline void write_location(const ConnectionPtr& connection, std::int64_t product,
                     std::int64_t location, std::int64_t before, std::int64_t after) {
     if (before < 0 || after < 0 || after > max_stock)
         throw ApiFailure{409, "Invalid warehouse balance"};
@@ -139,15 +139,15 @@ void write_location(const ConnectionPtr& connection, std::int64_t product,
     if (before != 0) throw ApiFailure{409, "Concurrent location change"};
     const auto insert = connection->execute(
         "INSERT INTO location_balances "
-        "(product_id,location_id,quantity,created_at,updated_at) "
-        "VALUES (?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
-        "ON CONFLICT(product_id,location_id) DO NOTHING",
-        {product, location, after});
+        "(product_id,location_id,balance_key,quantity,created_at,updated_at) "
+        "VALUES (?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+        "ON CONFLICT(balance_key) DO NOTHING",
+        {product, location, std::to_string(product)+":"+std::to_string(location), after});
     if (insert.affected_rows != 1)
         throw ApiFailure{409, "Concurrent location change"};
 }
 
-void location_journal(const ConnectionPtr& connection, const Command& command,
+inline void location_journal(const ConnectionPtr& connection, const Command& command,
                       std::int64_t location, std::int64_t delta) {
     connection->execute(
         "INSERT INTO location_movements "
@@ -157,7 +157,7 @@ void location_journal(const ConnectionPtr& connection, const Command& command,
          command.kind, delta, command.reason});
 }
 
-bool claim(const ConnectionPtr& connection, const Command& command, std::int64_t central) {
+inline bool claim(const ConnectionPtr& connection, const Command& command, std::int64_t central) {
     const auto inserted = connection->execute(
         "INSERT INTO inventory_operations "
         "(reference,product_id,actor_id,kind,quantity,quantity_delta,stock_after,reason,created_at,updated_at) "
@@ -180,7 +180,7 @@ bool claim(const ConnectionPtr& connection, const Command& command, std::int64_t
     return false;
 }
 
-void finalize(const ConnectionPtr& connection, const Command& command,
+inline void finalize(const ConnectionPtr& connection, const Command& command,
               std::int64_t delta, std::int64_t central) {
     const auto updated = connection->execute(
         "UPDATE inventory_operations SET quantity_delta=?,stock_after=?,updated_at=CURRENT_TIMESTAMP "
@@ -189,7 +189,7 @@ void finalize(const ConnectionPtr& connection, const Command& command,
         throw ApiFailure{503, "Inventory operation not finalized"};
 }
 
-Command command_from(Request& request, std::initializer_list<std::string_view> allowed,
+inline Command command_from(Request& request, std::initializer_list<std::string_view> allowed,
                      std::string_view kind, bool allow_correction = false) {
     const auto id = require_manager(request);
     const auto& body = object_body(request, allowed);
@@ -208,7 +208,7 @@ Command command_from(Request& request, std::initializer_list<std::string_view> a
     return command;
 }
 
-Json operation_response(const Command& command, std::int64_t delta,
+inline Json operation_response(const Command& command, std::int64_t delta,
                         std::int64_t stock, bool replayed,
                         std::int64_t location, std::int64_t local_stock) {
     return Json::object({
@@ -221,7 +221,7 @@ Json operation_response(const Command& command, std::int64_t delta,
     });
 }
 
-Response create_warehouse(Request& request) {
+inline Response create_warehouse(Request& request) {
     return handle([&]() -> Response {
         require_manager(request);
         const auto& data = object_body(request, {"code","name"});
@@ -238,7 +238,7 @@ Response create_warehouse(Request& request) {
     });
 }
 
-Response list_warehouses(Request& request) {
+inline Response list_warehouses(Request& request) {
     return handle([&]() -> Response {
         require_reader(request);
         const auto records = DB::connection()->execute(
@@ -247,7 +247,7 @@ Response list_warehouses(Request& request) {
     });
 }
 
-Response create_location(Request& request) {
+inline Response create_location(Request& request) {
     return handle([&]() -> Response {
         require_manager(request);
         const auto& data = object_body(request, {"warehouse_id","code","name"});
@@ -272,7 +272,7 @@ Response create_location(Request& request) {
     });
 }
 
-Response list_locations(Request& request) {
+inline Response list_locations(Request& request) {
     return handle([&]() -> Response {
         require_reader(request);
         auto conn = DB::connection();
@@ -292,7 +292,7 @@ Response list_locations(Request& request) {
     });
 }
 
-Response balances(Request& request) {
+inline Response balances(Request& request) {
     return handle([&]() -> Response {
         require_reader(request);
         const auto product = route_id(request,"product");
@@ -316,7 +316,7 @@ Response balances(Request& request) {
     });
 }
 
-Response allocate(Request& request, std::mutex& gate) {
+inline Response allocate(Request& request, std::mutex& gate) {
     return handle([&]() -> Response {
         auto command = command_from(request,
             {"product_id","location_id","quantity","reference","reason"}, "allocate");
@@ -356,7 +356,7 @@ Response allocate(Request& request, std::mutex& gate) {
     });
 }
 
-Response transfer(Request& request, std::mutex& gate) {
+inline Response transfer(Request& request, std::mutex& gate) {
     return handle([&]() -> Response {
         const auto command=command_from(request,
             {"product_id","source_location_id","destination_location_id","quantity","reference","reason"},
@@ -411,7 +411,7 @@ Response transfer(Request& request, std::mutex& gate) {
     });
 }
 
-Response location_movement(Request& request, std::mutex& gate) {
+inline Response location_movement(Request& request, std::mutex& gate) {
     return handle([&]() -> Response {
         require_manager(request);
         const auto& body=object_body(request,
@@ -479,7 +479,7 @@ Response location_movement(Request& request, std::mutex& gate) {
     });
 }
 
-Response location_history(Request& request) {
+inline Response location_history(Request& request) {
     return handle([&]() -> Response {
         require_reader(request);
         const auto location=route_id(request,"location");
@@ -513,7 +513,7 @@ Response location_history(Request& request) {
     });
 }
 
-void register_routes(gungnir::Application& app) {
+inline void register_routes(gungnir::Application& app) {
     const auto gate=inventory::transactions::shared_gate();
     app.router().get("/api/warehouses",[](Request& r){return list_warehouses(r);});
     app.router().post("/api/warehouses",[](Request& r){return create_warehouse(r);});

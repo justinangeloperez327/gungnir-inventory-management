@@ -15,7 +15,7 @@ class WarehouseContractTests(unittest.TestCase):
                       "location_movements","warehouse_transfers",
                       "inventory_location_operations"):
             self.assertIn("Table::create('"+table+"'",migration)
-        self.assertIn("table.unique(['product_id', 'location_id'])",migration)
+        self.assertIn("table.string('balance_key', 64).unique()",migration)
 
     def test_global_stock_cannot_fall_below_locations(self):
         native=content("bootstrap/inventory_transactions.hpp")

@@ -53,6 +53,7 @@ References are globally unique across all stock operations. Identical successful
 - Transfer creates a signed pair of location movements, one transfer record, and one idempotency operation, but no global stock movement.
 - Located receipt/issue/return/correction atomically updates both balances and writes one global movement and one location movement.
 - All tables are created by one additive, last-ordered migration. Existing inventory and existing stock movement history are preserved.
+- The database enforces one row per product/location with a deterministic unique `balance_key` formatted `product_id:location_id`. This is a deliberate workaround for the Gungnir v1.0.2 migration transpiler's unsupported composite-unique-list lowering; **all** balance writes must use the native service that constructs that key.
 - SQLite is the supported backend for this phase; the SQL uses `ON CONFLICT`, bound parameters and transaction-scoped writes. Do not switch database engines without porting/tests.
 - Historical location movements remain readable after product archive.
 - Data invariants: `0 <= located <= total <= 2,147,483,647`, each location quantity is nonnegative, `total == SUM(global movement deltas)` for newly created products and `location quantity == SUM(location movement deltas)` for every location since its introduction.
