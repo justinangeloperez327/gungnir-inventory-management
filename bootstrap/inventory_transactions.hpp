@@ -162,6 +162,14 @@ inline Response perform(Request& request, std::mutex& gate) {
         std::lock_guard lock{gate};
         return DB::transaction([&]() -> Response {
             auto connection = DB::connection();
+            // Resolve product existence before claiming an operation reference.
+            // This maps a missing SKU to 404 instead of a foreign-key 503.
+            const auto products = connection->execute(
+                "SELECT stock_on_hand, active FROM products WHERE id = ?",
+                {command.product_id}
+            );
+            if (products.rows.empty()) throw ApiFailure{404, "Product not found"};
+
             const auto claimed = connection->execute(
                 "INSERT INTO inventory_operations "
                 "(reference, product_id, actor_id, kind, quantity, quantity_delta, stock_after, reason, created_at, updated_at) "
@@ -189,11 +197,6 @@ inline Response perform(Request& request, std::mutex& gate) {
                                row_number(previous, "stock_after"), true);
             }
 
-            const auto products = connection->execute(
-                "SELECT stock_on_hand, active FROM products WHERE id = ?",
-                {command.product_id}
-            );
-            if (products.rows.empty()) throw ApiFailure{404, "Product not found"};
             const auto& product = products.rows.front();
             if (row_number(product, "active") == 0)
                 throw ApiFailure{409, "Archived products cannot change stock"};
