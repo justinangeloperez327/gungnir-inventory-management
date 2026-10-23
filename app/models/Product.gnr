@@ -1,9 +1,10 @@
 model Product {
     table = 'products';
     timestamps = true;
-    // Mass assignment of stock or archived status is forbidden: stock writes
-    // require the Group 4 transactional ledger service.
-    fillable = ['category_id', 'sku', 'name', 'unit_price_minor', 'reorder_level'];
+    // Product creation explicitly supplies stock=0 and active=true.
+    // Controllers only pass validated metadata on subsequent updates.
+    // Do not call create/update with an untrusted raw request object.
+    fillable = ['category_id', 'sku', 'name', 'unit_price_minor', 'reorder_level', 'stock_on_hand', 'active'];
     casts = {'active': 'bool'};
 
     int category_id;

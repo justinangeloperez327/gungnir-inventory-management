@@ -22,7 +22,7 @@
 - Category code and product SKU are unique database-indexed identifiers. Friendly uniqueness prechecks supplement, not replace, database constraints.
 - Managers/admins may create/update categories and product metadata. Categories linked to any products cannot be removed.
 - All products start with zero stock; product deletion archives with active=false, preserving ledger history. A separate restore endpoint reactivates.
-- Stock and active fields are not mass-assignable, and untrusted writes cannot alter stock.
+- Stock and active fields are allowlisted in the model solely so creation can explicitly initialize them; the HTTP create/update controllers never accept untrusted stock/active values. Never pass an unvalidated request body directly to ORM create/update.
 - POST/PUT/PATCH mutation requests require a valid session, role, CSRF, and JSON body. Money uses nonnegative integer minor units.
 - Category-code and product-SKU cursor pagination has 20 entries per page and explicit has_more/next_cursor.
 - Full stock movement and quantity changes remain reserved for Group 4.

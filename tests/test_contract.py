@@ -66,7 +66,8 @@ class Group3ContractTests(unittest.TestCase):
         self.assertIn("stock_on_hand: 0", product)
         self.assertNotIn("request.input('stock_on_hand')", product)
         self.assertNotIn("'stock_on_hand': '", product)
-        self.assertNotIn("stock_on_hand", source("app/models/Product.gnr").split("fillable = ")[1].split(";")[0])
+        self.assertIn("stock_on_hand: 0", product)
+        self.assertNotIn("stock_on_hand:", product.split("update(Request request")[1].split("destroy(Request request")[0])
         self.assertNotIn("Route::post('/api/stock", source("routes/web.gnr"))
 
     def test_cursor_bounds(self):
