@@ -69,3 +69,5 @@ jobs:
         run: python3 scripts/catalog_smoke.py
       - name: Verify transactions and concurrency over HTTP
         run: python3 scripts/inventory_smoke.py
+      - name: Verify warehouse transfers, allocations and reconciliation
+        run: python3 scripts/warehouse_smoke.py

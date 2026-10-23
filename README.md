@@ -2,7 +2,7 @@
 
 A native C++23 inventory management application written in Gungnir's structured `.gnr` language.
 
-> **Status:** Group 4 inventory-transaction prototype. Managers/admins can apply idempotent stock receipts, issues, returns and absolute corrections through an atomic SQLite ledger. **Do not deploy publicly:** sessions remain process-local and production security controls are incomplete.
+> **Status:** Group 5 warehouse/location tracking prototype. Authenticated users can inspect warehouse stock, and managers/admins can allocate unlocated inventory, perform location-specific adjustments and transfer stock between warehouse locations. All location and global stock mutations commit atomically. **Do not deploy publicly:** sessions remain process-local and production security controls are incomplete.
 
 ## Requirements
 
@@ -65,10 +65,17 @@ The provisioning script prompts for an email, name and password (12–128 charac
 | POST | `/api/products/{product}/restore` | Reactivate archived product |
 | POST | `/api/inventory/movements` | Transactional receipt/issue/return/correction (manager/admin) |
 | GET | `/api/inventory/products/{product}/movements` | Paginated signed movement ledger (authenticated) |
+| GET / POST | `/api/warehouses` | List warehouses / create warehouse (manager/admin) |
+| GET / POST | `/api/locations` | List locations / create location (manager/admin) |
+| GET | `/api/inventory/products/{product}/balances` | Total, located and unallocated stock |
+| POST | `/api/inventory/allocations` | Allocate existing unlocated stock to a location |
+| POST | `/api/inventory/transfers` | Atomic inter-location transfer, no global change |
+| POST | `/api/inventory/location-movements` | Located receipt/issue/return/correction |
+| GET | `/api/inventory/locations/{location}/movements` | Paginated location ledger |
 
 Catalog create/update calls require JSON bodies and a session CSRF token in the `X-CSRF-Token` header. `after` paginates by unique category code or SKU; responses expose `data`, `has_more`, and `next_cursor`. Catalog CRUD does not change stock quantities.
 
-The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). Stock movements must go through the Group 4 [transaction API](docs/INVENTORY_TRANSACTIONS.md), which uses an idempotency reference, compares the stored balance on update, and commits the audit row atomically. Do not modify `stock_on_hand` from catalog CRUD. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
+The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). Stock movements must go through the Group 4 [transaction API](docs/INVENTORY_TRANSACTIONS.md) or the Group 5 [warehouse API](docs/WAREHOUSES.md). Group 4 requests without a location only affect **unallocated** stock; they cannot decrease global inventory below the quantity held in warehouses. Group 5 allocation and transfers preserve global stock; located receipts/issues/corrections atomically adjust the location and global total. Never modify `stock_on_hand` using catalog CRUD. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
 
 ## Verify
 

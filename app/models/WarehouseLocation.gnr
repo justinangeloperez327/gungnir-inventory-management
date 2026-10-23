@@ -1,0 +1,11 @@
+model WarehouseLocation {
+    table = 'warehouse_locations';
+    timestamps = true;
+    fillable = ['warehouse_id', 'code', 'name', 'active'];
+    casts = {'active': 'bool'};
+
+    int warehouse_id;
+    string code;
+    string name;
+    bool active;
+}

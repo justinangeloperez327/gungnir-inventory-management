@@ -153,6 +153,11 @@ inline Response summary(const Command& command, std::int64_t delta,
     }), replayed ? 200 : 201);
 }
 
+inline std::shared_ptr<std::mutex> shared_gate() {
+    static const auto gate = std::make_shared<std::mutex>();
+    return gate;
+}
+
 inline Response perform(Request& request, std::mutex& gate) {
     try {
         const auto command = parse(request);
@@ -193,6 +198,13 @@ inline Response perform(Request& request, std::mutex& gate) {
                     row_text(previous, "kind") != command.kind ||
                     row_text(previous, "reason") != command.reason)
                     throw ApiFailure{409, "Reference already used for another operation"};
+                // A location-specific operation cannot be replayed by the
+                // legacy unallocated-stock endpoint, even with a matching body.
+                if (!connection->execute(
+                    "SELECT reference FROM inventory_location_operations WHERE reference = ?",
+                    {command.reference}
+                ).rows.empty())
+                    throw ApiFailure{409, "Reference belongs to a location-specific movement"};
                 return summary(command, row_number(previous, "quantity_delta"),
                                row_number(previous, "stock_after"), true);
             }
@@ -211,6 +223,18 @@ inline Response perform(Request& request, std::mutex& gate) {
             if (after < 0) throw ApiFailure{409, "Insufficient stock"};
             if (after > max_stock) throw ApiFailure{409, "Stock capacity exceeded"};
             if (delta == 0) throw ApiFailure{409, "Correction does not change stock"};
+
+            // Legacy Group 4 operations are unallocated inventory changes.
+            // Never debit allocated stock via this endpoint or adjust the
+            // central total below the sum of warehouse/location balances.
+            const auto located = connection->execute(
+                "SELECT COALESCE(SUM(quantity), 0) AS total FROM location_balances WHERE product_id = ?",
+                {command.product_id}
+            );
+            if (located.rows.empty())
+                throw ApiFailure{503, "Location balance could not be evaluated"};
+            if (after < row_number(located.rows.front(), "total"))
+                throw ApiFailure{409, "Insufficient unallocated stock"};
 
             // Optimistic CAS prevents a stale read overwriting a concurrent
             // inventory transaction or another writer's stock balance.
@@ -298,7 +322,7 @@ inline Response history(Request& request) {
 }
 
 inline void register_routes(gungnir::Application& app) {
-    auto gate = std::make_shared<std::mutex>();
+    auto gate = shared_gate();
     // The global app middleware still enforces sessions, identity and CSRF.
     app.router().post("/api/inventory/movements",
         [gate](Request& request) { return perform(request, *gate); });

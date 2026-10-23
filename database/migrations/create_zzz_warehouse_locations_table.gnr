@@ -1,0 +1,75 @@
+migration CreateWarehouseLocationsTable {
+    up() {
+        Table::create('warehouses', (table) => {
+            table.id();
+            table.string('code', 32).unique();
+            table.string('name', 128);
+            table.boolean('active');
+            table.timestamps();
+        });
+        Table::create('warehouse_locations', (table) => {
+            table.id();
+            table.foreignId('warehouse_id');
+            table.string('code', 32).unique();
+            table.string('name', 128);
+            table.boolean('active');
+            table.timestamps();
+            table.foreign('warehouse_id').references('id').on('warehouses');
+        });
+        Table::create('location_balances', (table) => {
+            table.id();
+            table.foreignId('product_id');
+            table.foreignId('location_id');
+            table.integer('quantity');
+            table.timestamps();
+            table.unique(['product_id', 'location_id']);
+            table.foreign('product_id').references('id').on('products');
+            table.foreign('location_id').references('id').on('warehouse_locations');
+        });
+        Table::create('inventory_location_operations', (table) => {
+            table.id();
+            table.string('reference', 64).unique();
+            table.foreignId('location_id');
+            table.integer('location_after');
+            table.timestamps();
+            table.foreign('location_id').references('id').on('warehouse_locations');
+        });
+        Table::create('warehouse_transfers', (table) => {
+            table.id();
+            table.string('reference', 64).unique();
+            table.foreignId('product_id');
+            table.foreignId('source_location_id');
+            table.foreignId('destination_location_id');
+            table.foreignId('actor_id');
+            table.integer('quantity');
+            table.timestamps();
+            table.foreign('product_id').references('id').on('products');
+            table.foreign('source_location_id').references('id').on('warehouse_locations');
+            table.foreign('destination_location_id').references('id').on('warehouse_locations');
+            table.foreign('actor_id').references('id').on('users');
+        });
+        Table::create('location_movements', (table) => {
+            table.id();
+            table.string('reference', 64);
+            table.foreignId('product_id');
+            table.foreignId('location_id');
+            table.foreignId('actor_id');
+            table.string('kind', 16);
+            table.integer('quantity_delta');
+            table.string('reason', 32);
+            table.timestamps();
+            table.foreign('product_id').references('id').on('products');
+            table.foreign('location_id').references('id').on('warehouse_locations');
+            table.foreign('actor_id').references('id').on('users');
+        });
+    }
+
+    down() {
+        Table::dropIfExists('location_movements');
+        Table::dropIfExists('warehouse_transfers');
+        Table::dropIfExists('inventory_location_operations');
+        Table::dropIfExists('location_balances');
+        Table::dropIfExists('warehouse_locations');
+        Table::dropIfExists('warehouses');
+    }
+}

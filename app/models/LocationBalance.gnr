@@ -1,0 +1,9 @@
+model LocationBalance {
+    table = 'location_balances';
+    timestamps = true;
+    fillable = ['product_id', 'location_id', 'quantity'];
+
+    int product_id;
+    int location_id;
+    int quantity;
+}
