@@ -1,0 +1,13 @@
+model User {
+    table = 'users';
+    timestamps = false;
+    fillable = ['name', 'email', 'password_hash', 'role', 'active'];
+    hidden = ['password_hash'];
+    casts = {'active': 'bool'};
+
+    string name;
+    string email;
+    string password_hash;
+    string role;
+    bool active;
+}

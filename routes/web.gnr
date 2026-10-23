@@ -1,4 +1,11 @@
-Route::get('/', HomeController::index);
 Route::get('/health', HomeController::health);
-Route::get('/products', ProductController::index);
-Route::get('/api/products', ProductController::apiIndex);
+Route::get('/login', AuthController::index);
+Route::post('/login', AuthController::store).middleware('login-throttle');
+Route::post('/logout', AuthController::destroy).middleware(RequireLoginMiddleware);
+
+Route::get('/', HomeController::index).middleware(RequireLoginMiddleware);
+Route::get('/products', ProductController::index).middleware(RequireLoginMiddleware);
+Route::get('/api/products', ProductController::apiIndex).middleware(RequireLoginMiddleware);
+Route::get('/api/me', AuthController::me).middleware(RequireLoginMiddleware);
+Route::get('/api/management/status', AuthController::managerStatus).middleware(RequireManagerMiddleware);
+Route::get('/api/admin/status', AuthController::adminStatus).middleware(RequireAdminMiddleware);

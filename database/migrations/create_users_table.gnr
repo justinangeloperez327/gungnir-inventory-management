@@ -1,0 +1,14 @@
+migration CreateUsersTable {
+    up() {
+        Table::create('users', (table) => {
+            table.id();
+            table.string('name', 100);
+            table.string('email', 254).unique();
+            table.string('password_hash', 255);
+            table.string('role', 32);
+            table.boolean('active');
+        });
+    }
+
+    down() { Table::dropIfExists('users'); }
+}

@@ -1,0 +1,10 @@
+middleware RequireManagerMiddleware {
+    async Response handle(Request request, Next next) {
+        const user = request.user();
+        if (user == null) { return text('Unauthenticated', 401); }
+        if (!user.role('admin') && !user.role('manager')) {
+            return text('Forbidden', 403);
+        }
+        return await next(request);
+    }
+}

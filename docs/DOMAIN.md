@@ -17,10 +17,14 @@
 7. Product deactivation should preserve historical ledger entries. Permanent deletion of referenced products should be disallowed.
 8. The first product list is deliberately limited to 100 entries. Add pagination and search before larger datasets.
 
+## User accounts (Group 2)
+
+Users have a private password hash, a unique email address, an active flag, and one of three roles: `admin`, `manager`, `viewer`. Session identity restoration rechecks the active flag and role on every request. There is no public signup. The initial host-local CLI provisions accounts after migrations; role checks are currently applied to read/role-probe endpoints only. Future stock-changing operations must independently enforce role permissions and actor attribution.
+
 ## Migration ordering
 
-Migrations run in deterministic filename order: categories → products → stock movements. This order matches foreign key dependencies. Database migrations and ORM declarations must be changed together.
+Migrations run in deterministic filename order: categories → products → stock movements → users. This order matches foreign key dependencies. Database migrations and ORM declarations must be changed together.
 
 ## Scope limitations
 
-This is a **development skeleton**, not a released warehouse system. No seed records, login/registration, user roles, barcode scanning, purchasing, suppliers, warehouses, currency settings, or stock write UI yet.
+This is a **development skeleton**, not a released warehouse system. No product seed records, public registration, barcode scanning, purchasing, suppliers, warehouses, currency settings, or stock write UI yet.

@@ -1,0 +1,37 @@
+controller AuthController {
+    index(Request request) {
+        if (request.authenticated()) { return redirect('/'); }
+        return view('auth/login', {
+            title: 'Sign in',
+            csrf: request.session().get('_gungnir_csrf_token'),
+            error: ''
+        });
+    }
+
+    store(Request request) {
+        const credentials = request.validate({
+            'email': 'required|email|max:254',
+            'password': 'required|string'
+        });
+        if (!auth.attempt(request, credentials, false)) {
+            return view('auth/login', {
+                title: 'Sign in',
+                csrf: request.session().get('_gungnir_csrf_token'),
+                error: 'Invalid email or password'
+            }, 401);
+        }
+        return redirect('/');
+    }
+
+    destroy(Request request) {
+        auth.logout(request);
+        return redirect('/login');
+    }
+
+    me(Request request) {
+        return json({authenticated: request.authenticated(), user: request.user()});
+    }
+
+    adminStatus() { return json({authorized: true, role: 'admin'}); }
+    managerStatus() { return json({authorized: true, capability: 'manage_inventory'}); }
+}

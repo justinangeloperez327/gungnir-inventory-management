@@ -1,9 +1,10 @@
 import app.models.Product;
 
 controller ProductController {
-    index() {
+    index(Request request) {
         return view('products/index', {
             title: 'Products',
+            csrf: request.session().get('_gungnir_csrf_token'),
             products: Product::orderBy('name').limit(100).get()
         });
     }

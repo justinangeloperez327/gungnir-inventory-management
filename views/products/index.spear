@@ -22,6 +22,10 @@
 <body>
   <main>
     <a href="/">← Dashboard</a>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_token" value="{{ csrf }}">
+      <button type="submit">Sign out</button>
+    </form>
     <h1>Products</h1>
     <p>Read-only catalog · prices are stored as integer minor currency units.</p>
     <div class="table-wrap">

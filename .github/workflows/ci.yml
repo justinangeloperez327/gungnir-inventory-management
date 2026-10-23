@@ -54,5 +54,14 @@ jobs:
           gungnir migrate:plan
           gungnir migrate
           gungnir migrate:status
+      - name: Build native user provisioner
+        run: |
+          cmake -S tools -B build/provision -G Ninja "-DCMAKE_PREFIX_PATH=$GUNGNIR_CMAKE_PREFIX"
+          cmake --build build/provision --parallel 2
+      - name: Provision isolated CI test accounts
+        run: |
+          python3 scripts/provision_user.py --role viewer --ci-test-fixture
+          python3 scripts/provision_user.py --role manager --ci-test-fixture
+          python3 scripts/provision_user.py --role admin --ci-test-fixture
       - name: Smoke test native application
         run: python3 scripts/smoke.py

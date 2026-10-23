@@ -8,16 +8,22 @@ def source(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-class FoundationContractTests(unittest.TestCase):
+class Group2ContractTests(unittest.TestCase):
     def test_structured_project_marker(self):
         self.assertIn("profile=structured", source(".gungnir-project"))
 
-    def test_read_only_http_surface(self):
-        routes = [line.strip() for line in source("routes/web.gnr").splitlines() if line.strip()]
-        self.assertEqual(len(routes), 4)
-        self.assertTrue(all(line.startswith("Route::get(") for line in routes))
-        for endpoint in ("'/'", "'/products'", "'/api/products'", "'/health'"):
-            self.assertTrue(any(endpoint in line for line in routes))
+    def test_only_expected_public_endpoints(self):
+        routes = source("routes/web.gnr")
+        self.assertEqual(routes.count("Route::"), 10)
+        self.assertIn("Route::get('/health', HomeController::health);", routes)
+        self.assertIn("Route::get('/login', AuthController::index);", routes)
+        self.assertIn("Route::post('/login', AuthController::store)", routes)
+        for protected in ("/products", "/api/products", "/api/me"):
+            route = next(line for line in routes.splitlines() if f"'{protected}'" in line)
+            self.assertIn("middleware(RequireLoginMiddleware)", route)
+        self.assertIn("RequireAdminMiddleware", routes)
+        self.assertIn("RequireManagerMiddleware", routes)
+        self.assertNotIn("Route::post('/products", routes)
 
     def test_schema_dependency_order(self):
         files = sorted(p.name for p in (ROOT / "database/migrations").glob("*.gnr"))
@@ -25,11 +31,30 @@ class FoundationContractTests(unittest.TestCase):
             "create_categories_table.gnr",
             "create_products_table.gnr",
             "create_stock_movements_table.gnr",
+            "create_users_table.gnr",
         ])
         self.assertIn("table.foreign('category_id')", source("database/migrations/create_products_table.gnr"))
         self.assertIn("table.foreign('product_id')", source("database/migrations/create_stock_movements_table.gnr"))
+        self.assertIn("table.string('email', 254).unique()", source("database/migrations/create_users_table.gnr"))
 
-    def test_stock_changes_not_implemented_without_auth(self):
+    def test_credentials_never_serialized(self):
+        self.assertIn("hidden = ['password_hash']", source("app/models/User.gnr"))
+        self.assertNotIn("password_hash", source("app/controllers/AuthController.gnr"))
+        self.assertIn("Password::hash(password)", source("tools/provision_user.cpp"))
+
+    def test_login_security_order(self):
+        bootstrap = source("bootstrap/app.hpp")
+        order = [
+            "session::middleware(session_store, session_options)",
+            "http::csrf()",
+            "auth::session(identities)",
+            "auth::guard(guard)",
+        ]
+        self.assertEqual(sorted(bootstrap.index(part) for part in order),
+                         [bootstrap.index(part) for part in order])
+        self.assertIn("auth.logout(request)", source("app/controllers/AuthController.gnr"))
+
+    def test_no_inventory_write_paths(self):
         controllers = "\n".join(f.read_text(encoding="utf-8") for f in (ROOT / "app/controllers").glob("*.gnr"))
         for forbidden in ("::create(", ".save(", ".remove(", "::update(", "::delete("):
             self.assertNotIn(forbidden, controllers)

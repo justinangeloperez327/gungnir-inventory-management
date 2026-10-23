@@ -1,10 +1,13 @@
 controller HomeController {
-    Response index() {
-        return view('dashboard', {title: 'Gungnir Inventory'});
+    Response index(Request request) {
+        return view('dashboard', {
+            title: 'Gungnir Inventory',
+            csrf: request.session().get('_gungnir_csrf_token'),
+            user: request.user()
+        });
     }
 
     Response health() {
-        // Process liveness only. This does not prove database readiness.
         return json({status: 'ok', service: 'gungnir-inventory-management'});
     }
 }

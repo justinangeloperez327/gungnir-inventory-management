@@ -1,0 +1,8 @@
+middleware RequireLoginMiddleware {
+    async Response handle(Request request, Next next) {
+        if (!request.authenticated()) {
+            return text('Unauthenticated', 401);
+        }
+        return await next(request);
+    }
+}

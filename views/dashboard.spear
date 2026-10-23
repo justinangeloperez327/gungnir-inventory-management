@@ -20,9 +20,14 @@
 <body>
   <header>Gungnir Inventory</header>
   <main>
-    <small>APPLICATION FOUNDATION · GROUP 1</small>
+    <p>Signed in: {{ user.attributes.name }}</p>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_token" value="{{ csrf }}">
+      <button type="submit">Sign out</button>
+    </form>
+    <small>AUTHENTICATED INVENTORY · GROUP 2</small>
     <h1>Inventory management, built with Gungnir.</h1>
-    <p>A native C++23 server and a structured Gungnir application. Product browsing is enabled; stock mutations and account access controls are intentionally reserved for later groups.</p>
+    <p>A native C++23 server and a structured Gungnir application. Authenticated product browsing is enabled. Stock mutations remain disabled until transactional validation is in place.</p>
     <section class="card">
       <h2>Product catalog</h2>
       <p>Review the current product records from SQLite.</p>
