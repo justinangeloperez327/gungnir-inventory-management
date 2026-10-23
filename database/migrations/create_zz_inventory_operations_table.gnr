@@ -1,0 +1,22 @@
+migration CreateInventoryOperationsTable {
+    up() {
+        // This migration sorts after users/products; do not rename it without
+        // inspecting the migration repository's recorded history.
+        Table::create('inventory_operations', (table) => {
+            table.id();
+            table.string('reference', 64).unique();
+            table.foreignId('product_id');
+            table.foreignId('actor_id');
+            table.string('kind', 16);
+            table.integer('quantity');
+            table.integer('quantity_delta');
+            table.integer('stock_after');
+            table.string('reason', 32);
+            table.timestamps();
+            table.foreign('product_id').references('id').on('products');
+            table.foreign('actor_id').references('id').on('users');
+        });
+    }
+
+    down() { Table::dropIfExists('inventory_operations'); }
+}

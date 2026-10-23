@@ -7,7 +7,7 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 | 1 | Application SDK bootstrap, schema, read-only pages/API, CI | Native build, migrations, HTTP smoke on SQLite |
 | 2 | User accounts, login/logout, roles and protected routes | Compiler, native build, CSRF/session, role tests |
 | 3 | Product/category CRUD and validation | Role/CSRF enforcement, uniqueness, FK integrity, cursor bounds and stock isolation |
-| 4 | Inventory receipts, issues, returns and corrections | Atomic stock + ledger, no negative stock, concurrency tests |
+| 4 | Inventory receipts, issues, returns and corrections | Unique reference, SQLite transaction and CAS, audit history, concurrent HTTP tests |
 | 5 | Warehouse/location tracking | Correct location-level quantities and transfers |
 | 6 | Suppliers, purchase orders and receiving | PO receipt creates audited movements |
 | 7 | Sales orders, reservations and fulfillment | No double allocation / oversell |
@@ -19,7 +19,7 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 
 ## Progress
 
-Groups 1–2 passed native CI. Group 3 introduces category/product metadata CRUD, archive and restore, protected writes, validation and deterministic cursor pagination. Full Group 3 acceptance requires SQLite-backed API smoke tests.
+Groups 1–3 passed native CI. Group 4 adds SQLite-atomic receipts/issues/returns/corrections with operation deduplication and actor-attributed movement history. Acceptance requires the new concurrency and rollback HTTP tests to pass.
 
 ## Constraints
 

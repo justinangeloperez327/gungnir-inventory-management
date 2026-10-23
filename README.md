@@ -2,7 +2,7 @@
 
 A native C++23 inventory management application written in Gungnir's structured `.gnr` language.
 
-> **Status:** Group 3 catalog CRUD prototype. Authenticated users browse products and categories; managers/admins can maintain metadata. Product archives retain history. Stock-changing operations remain unavailable. **Do not deploy publicly:** sessions are process-local and production security controls are incomplete.
+> **Status:** Group 4 inventory-transaction prototype. Managers/admins can apply idempotent stock receipts, issues, returns and absolute corrections through an atomic SQLite ledger. **Do not deploy publicly:** sessions remain process-local and production security controls are incomplete.
 
 ## Requirements
 
@@ -63,10 +63,12 @@ The provisioning script prompts for an email, name and password (12–128 charac
 | PUT | `/api/products/{product}` | Update product metadata (manager/admin) |
 | DELETE | `/api/products/{product}` | Archive product (manager/admin) |
 | POST | `/api/products/{product}/restore` | Reactivate archived product |
+| POST | `/api/inventory/movements` | Transactional receipt/issue/return/correction (manager/admin) |
+| GET | `/api/inventory/products/{product}/movements` | Paginated signed movement ledger (authenticated) |
 
 Catalog create/update calls require JSON bodies and a session CSRF token in the `X-CSRF-Token` header. `after` paginates by unique category code or SKU; responses expose `data`, `has_more`, and `next_cursor`. Catalog CRUD does not change stock quantities.
 
-The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). No stock movements are accepted before Group 4 transactional services, concurrent stock validation, and auditability. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
+The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). Stock movements must go through the Group 4 [transaction API](docs/INVENTORY_TRANSACTIONS.md), which uses an idempotency reference, compares the stored balance on update, and commits the audit row atomically. Do not modify `stock_on_hand` from catalog CRUD. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
 
 ## Verify
 
@@ -80,7 +82,7 @@ gungnir build
 gungnir migrate:plan
 ```
 
-The GitHub Actions workflow additionally provisions CI-only test users, exercises login, CSRF, session rotation, logout and role separation, and runs native HTTP smoke tests.
+The GitHub Actions workflow additionally provisions CI-only test users, exercises login, CSRF, session rotation, logout and role separation, and runs native HTTP smoke tests, including transactional inventory concurrency and rollback scenarios.
 
 ## Policy
 

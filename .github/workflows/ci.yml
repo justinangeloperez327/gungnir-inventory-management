@@ -67,3 +67,5 @@ jobs:
         run: python3 scripts/smoke.py
       - name: Verify catalog CRUD and pagination over HTTP
         run: python3 scripts/catalog_smoke.py
+      - name: Verify transactions and concurrency over HTTP
+        run: python3 scripts/inventory_smoke.py

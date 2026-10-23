@@ -11,6 +11,7 @@
 #include <gungnir/auth/login.hpp>
 #include <gungnir/http/security.hpp>
 #include "identity.hpp"
+#include "inventory_transactions.hpp"
 
 #include <chrono>
 #include <memory>
@@ -47,6 +48,8 @@ inline void configure(gungnir::Application& app) {
     app.router().use(gungnir::http::csrf());
     app.router().use(gungnir::auth::session(identities));
     app.router().use(gungnir::auth::guard(guard));
+
+    inventory::transactions::register_routes(app);
 
     // This limiter is process-local; a distributed store is required to
     // enforce an equivalent quota across multiple servers.

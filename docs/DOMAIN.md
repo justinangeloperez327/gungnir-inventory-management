@@ -6,7 +6,11 @@
 - `products`: SKU (unique), category, name, integer unit price in the currency's minor units, stock-on-hand counter, reorder level, active flag.
 - `stock_movements`: append-only intended audit journal; quantity delta, reason, reference and product foreign key.
 
-## Write-path invariants (stock changes planned for Group 4 onwards)
+## Transactional stock ledger (Group 4)
+
+See [Inventory Transactions](INVENTORY_TRANSACTIONS.md). A new `inventory_operations` table records actor identity and the unique operation reference. A Gungnir native extension commits an idempotency claim, bounded conditional stock update and canonical stock-movement entry in one transaction. The operation reference is global, including archived products. Receipts and returns increase quantity, issues decrease it, and corrections set the absolute target. History remains available on archived SKUs.
+
+## Write-path invariants (enforced in Group 4)
 
 1. Stock may never become negative unless an explicitly authorized backorder policy is introduced.
 2. A stock increase or decrease and its ledger entry must commit **atomically** in one database transaction. Never update the counter without its audit entry.
