@@ -12,6 +12,11 @@ class Group3ContractTests(unittest.TestCase):
     def test_structured_project_marker(self):
         self.assertIn("profile=structured", source(".gungnir-project"))
 
+    def test_gungnir_checkout_format(self):
+        attributes = source(".gitattributes")
+        self.assertIn(".gungnir-project text eol=lf", attributes)
+        self.assertIn("*.gnr text eol=lf", attributes)
+
     def test_only_expected_public_endpoints(self):
         routes = source("routes/web.gnr")
         self.assertEqual(routes.count("Route::"), 21)
