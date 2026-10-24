@@ -1,0 +1,6 @@
+# Keep the structured compiler profile detectable on Windows even when
+# Git is configured with core.autocrlf=true (Gungnir v1.0.2 compatibility).
+.gungnir-project text eol=lf
+
+# Gungnir source files use consistent checkout line endings on all platforms.
+*.gnr text eol=lf
