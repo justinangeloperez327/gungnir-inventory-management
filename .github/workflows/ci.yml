@@ -71,3 +71,118 @@ jobs:
         run: python3 scripts/inventory_smoke.py
       - name: Verify warehouse transfers, allocations and reconciliation
         run: python3 scripts/warehouse_smoke.py
+
+  windows-application:
+    name: Windows · native inventory acceptance
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download and verify pinned Gungnir Application SDK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $asset = 'gungnir-v1.0.2-windows-x86_64-application.zip'
+          $base = 'https://github.com/justinangeloperez327/gungnir/releases/download/v1.0.2'
+          $archive = Join-Path $env:RUNNER_TEMP $asset
+          $sums = Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt'
+          Invoke-WebRequest -Uri "$base/$asset" -OutFile $archive
+          Invoke-WebRequest -Uri "$base/SHA256SUMS.txt" -OutFile $sums
+
+          $matches = @(Get-Content $sums | Where-Object {
+              $_ -match ('^[0-9a-fA-F]{64}\s+\*?' + [regex]::Escape($asset) + '$')
+          })
+          if ($matches.Count -ne 1) {
+              throw "Expected exactly one checksum for $asset"
+          }
+          $expected = ($matches[0] -split '\s+')[0].ToLowerInvariant()
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "Gungnir Application SDK SHA256 mismatch" }
+
+          $target = Join-Path $env:RUNNER_TEMP 'gungnir-sdk'
+          Expand-Archive -Path $archive -DestinationPath $target -Force
+          $sdk = Join-Path $target 'gungnir-v1.0.2-windows-x86_64-application'
+          if (-not (Test-Path (Join-Path $sdk 'bin/gungnir.exe')) -or
+              -not (Test-Path (Join-Path $sdk 'bin/gungnirc.exe'))) {
+              throw "Gungnir Application SDK executables are missing"
+          }
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $sdk 'bin')
+          Add-Content -Path $env:GITHUB_ENV -Value "GUNGNIR_CMAKE_PREFIX=$sdk"
+
+      - name: Verify structured checkout format
+        shell: pwsh
+        run: |
+          $bytes = [IO.File]::ReadAllBytes((Join-Path (Get-Location) '.gungnir-project'))
+          if ($bytes -contains [byte]13) {
+              throw '.gungnir-project was checked out with CRLF; structured compilation may use the wrong profile'
+          }
+          git check-attr text eol -- .gungnir-project app/models/Category.gnr
+          gungnir --version
+          gungnirc --version
+
+      - name: Test source contracts
+        run: python -m unittest discover -s tests -v
+
+      - name: Prepare SQLite database
+        shell: pwsh
+        run: |
+          Copy-Item .env.example .env
+          New-Item -ItemType Directory -Force storage | Out-Null
+
+      - name: Validate structured Gungnir syntax and IR
+        shell: pwsh
+        run: |
+          gungnirc --project . --check
+          if ($LASTEXITCODE -ne 0) { throw "Gungnir structured syntax validation failed" }
+          gungnirc --project . --verify-ir
+          if ($LASTEXITCODE -ne 0) { throw "Gungnir structured IR verification failed" }
+
+      - name: Build native inventory application
+        shell: pwsh
+        run: |
+          gungnir build
+          if ($LASTEXITCODE -ne 0) { throw "Windows native inventory build failed" }
+
+      - name: Plan and apply migrations
+        shell: pwsh
+        run: |
+          gungnir migrate:plan
+          if ($LASTEXITCODE -ne 0) { throw "Migration plan failed" }
+          gungnir migrate
+          if ($LASTEXITCODE -ne 0) { throw "Migration failed" }
+          gungnir migrate:status
+          if ($LASTEXITCODE -ne 0) { throw "Migration status failed" }
+
+      - name: Build native account provisioner
+        shell: pwsh
+        run: |
+          cmake -S tools -B build/provision -A x64 "-DCMAKE_PREFIX_PATH=$env:GUNGNIR_CMAKE_PREFIX"
+          if ($LASTEXITCODE -ne 0) { throw "Provisioner configuration failed" }
+          cmake --build build/provision --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "Provisioner build failed" }
+
+      - name: Provision isolated CI accounts
+        shell: pwsh
+        run: |
+          foreach ($role in @('viewer', 'manager', 'admin')) {
+              python scripts/provision_user.py --role $role --ci-test-fixture
+              if ($LASTEXITCODE -ne 0) { throw "Failed to provision CI $role" }
+          }
+
+      - name: Exercise authentication, catalogs, transactions and warehouses
+        shell: pwsh
+        run: |
+          foreach ($script in @('smoke.py', 'catalog_smoke.py', 'inventory_smoke.py', 'warehouse_smoke.py')) {
+              python "scripts/$script"
+              if ($LASTEXITCODE -ne 0) { throw "Windows HTTP smoke failure: $script" }
+          }
+
+      - name: Upload diagnostic logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: gungnir-inventory-windows-logs
+          path: storage/*.log
+          if-no-files-found: ignore
