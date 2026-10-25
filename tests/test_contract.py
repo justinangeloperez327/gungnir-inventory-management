@@ -45,6 +45,7 @@ class Group3ContractTests(unittest.TestCase):
             "create_users_table.gnr",
             "create_zz_inventory_operations_table.gnr",
             "create_zzz_warehouse_locations_table.gnr",
+            "create_zzzz_procurement_table.gnr",
         ])
         self.assertIn("table.foreign('category_id')", source("database/migrations/create_products_table.gnr"))
         self.assertIn("table.foreign('product_id')", source("database/migrations/create_stock_movements_table.gnr"))

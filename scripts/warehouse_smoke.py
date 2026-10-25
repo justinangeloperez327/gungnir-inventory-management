@@ -6,6 +6,7 @@ import os
 import signal
 import sqlite3
 import subprocess
+from smoke_process import stop
 import sys
 import time
 
@@ -209,12 +210,7 @@ def main():
             print(logpath.read_text(encoding="utf-8"),file=sys.stderr)
             raise
         finally:
-            if proc.poll() is None:
-                if os.name!="nt": os.killpg(proc.pid,signal.SIGTERM)
-                else: proc.terminate()
-                try: proc.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    proc.kill();proc.wait(timeout=5)
+            stop(proc)
 
 
 if __name__=="__main__":

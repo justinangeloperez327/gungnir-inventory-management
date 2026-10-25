@@ -2,7 +2,7 @@
 
 A native C++23 inventory management application written in Gungnir's structured `.gnr` language.
 
-> **Status:** Group 5 warehouse/location tracking prototype. Authenticated users can inspect warehouse stock, and managers/admins can allocate unlocated inventory, perform location-specific adjustments and transfer stock between warehouse locations. All location and global stock mutations commit atomically. **Do not deploy publicly:** sessions remain process-local and production security controls are incomplete.
+> **Status:** Group 6 procurement and receiving prototype. Suppliers, purchase orders, independent approval and partial location-based receipt transactions are available. Group 5 warehouse/location tracking remains supported. Authenticated users can inspect warehouse stock, and managers/admins can allocate unlocated inventory, perform location-specific adjustments and transfer stock between warehouse locations. All location and global stock mutations commit atomically. **Do not deploy publicly:** sessions remain process-local and production security controls are incomplete.
 
 ## Requirements
 
@@ -72,10 +72,15 @@ The provisioning script prompts for an email, name and password (12–128 charac
 | POST | `/api/inventory/transfers` | Atomic inter-location transfer, no global change |
 | POST | `/api/inventory/location-movements` | Located receipt/issue/return/correction |
 | GET | `/api/inventory/locations/{location}/movements` | Paginated location ledger |
+| GET / POST | `/api/suppliers` | List and create suppliers (manager/admin writes) |
+| GET / POST | `/api/purchase-orders` | Read or create purchase orders and immutable lines |
+| GET | `/api/purchase-orders/{order}` | Purchase order detail, lines and approval |
+| POST | `/api/purchase-orders/{order}/approve` | Independent admin approval of draft order |
+| GET / POST | `/api/purchase-orders/{order}/receipts` | List receipts / receive partial or full PO quantity |
 
 Catalog create/update calls require JSON bodies and a session CSRF token in the `X-CSRF-Token` header. `after` paginates by unique category code or SKU; responses expose `data`, `has_more`, and `next_cursor`. Catalog CRUD does not change stock quantities.
 
-The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). Stock movements must go through the Group 4 [transaction API](docs/INVENTORY_TRANSACTIONS.md) or the Group 5 [warehouse API](docs/WAREHOUSES.md). Group 4 requests without a location only affect **unallocated** stock; they cannot decrease global inventory below the quantity held in warehouses. Group 5 allocation and transfers preserve global stock; located receipts/issues/corrections atomically adjust the location and global total. Never modify `stock_on_hand` using catalog CRUD. Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
+The initial database schema includes `categories`, `products` (integer prices in minor units and a stock-on-hand counter), and `stock_movements` (quantity deltas for auditability). Stock movements must go through the Group 4 [transaction API](docs/INVENTORY_TRANSACTIONS.md) or the Group 5 [warehouse API](docs/WAREHOUSES.md). Group 4 requests without a location only affect **unallocated** stock; they cannot decrease global inventory below the quantity held in warehouses. Group 5 allocation and transfers preserve global stock; located receipts/issues/corrections atomically adjust the location and global total. Never modify `stock_on_hand` using catalog CRUD. Group 6 procurement details are in [docs/PROCUREMENT.md](docs/PROCUREMENT.md). Detailed delivery gates: [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DOMAIN.md](docs/DOMAIN.md).
 
 ## Verify
 

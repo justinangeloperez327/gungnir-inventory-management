@@ -1,0 +1,9 @@
+model Supplier {
+    table = 'suppliers';
+    timestamps = true;
+    fillable = ['code', 'name', 'active'];
+    casts = {'active': 'bool'};
+    string code;
+    string name;
+    bool active;
+}

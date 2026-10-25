@@ -9,7 +9,7 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 | 3 | Product/category CRUD and validation | Role/CSRF enforcement, uniqueness, FK integrity, cursor bounds and stock isolation |
 | 4 | Inventory receipts, issues, returns and corrections | Unique reference, SQLite transaction and CAS, audit history, concurrent HTTP tests |
 | 5 | Warehouse/location tracking | Located/unallocated reconciliation, cross-warehouse transfers, role/CSRF and concurrent HTTP tests |
-| 6 | Suppliers, purchase orders and receiving | PO receipt creates audited movements |
+| 6 | Suppliers, purchase orders and receiving | Approval separation, partial receiving, global and located stock journals, idempotency and concurrency |
 | 7 | Sales orders, reservations and fulfillment | No double allocation / oversell |
 | 8 | Stock reconciliation and physical counts | Reconciliation history and approval audit |
 | 9 | Dashboard, low-stock alerts, search and pagination | Accurate totals, accessible UI, bounded queries |
@@ -19,7 +19,7 @@ The application doubles as an end-to-end acceptance project for Gungnir. A featu
 
 ## Progress
 
-Groups 1–4 passed native CI. Group 5 adds multi-warehouse locations, unallocated stock allocation, location-specific adjustments, atomic transfers and location ledger history. Its CI acceptance requires existing regressions plus the Group 5 warehouse reconciliation and concurrency tests.
+Groups 1–5 passed native CI on Linux. Group 6 adds supplier registration, immutable purchase-order line snapshots, admin-only independent approvals and partial warehouse receiving. Every receipt atomically updates ordered and received quantities, both inventory balances and both movement journals under the existing global idempotency reference. The Group 6 acceptance gate is native Linux/Windows compiler, migration and HTTP tests including concurrency and retries.
 
 ## Constraints
 

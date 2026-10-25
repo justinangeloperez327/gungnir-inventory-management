@@ -12,8 +12,9 @@ def read(path):
 class InventoryContractTests(unittest.TestCase):
     def test_migration_is_additive_and_late(self):
         names = sorted(x.name for x in (ROOT / "database/migrations").glob("*.gnr"))
-        self.assertEqual(names[-2:], ["create_zz_inventory_operations_table.gnr",
-                                      "create_zzz_warehouse_locations_table.gnr"])
+        self.assertEqual(names[-3:], ["create_zz_inventory_operations_table.gnr",
+                                      "create_zzz_warehouse_locations_table.gnr",
+                                      "create_zzzz_procurement_table.gnr"])
         migration = read("database/migrations/create_zz_inventory_operations_table.gnr")
         self.assertIn("table.string('reference', 64).unique()", migration)
         self.assertIn("table.foreign('actor_id').references('id').on('users')", migration)

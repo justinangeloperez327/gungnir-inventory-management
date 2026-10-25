@@ -1,0 +1,9 @@
+model PurchaseOrder {
+    table = 'purchase_orders';
+    timestamps = true;
+    fillable = ['po_number', 'supplier_id', 'created_by', 'status'];
+    string po_number;
+    int supplier_id;
+    int created_by;
+    string status;
+}

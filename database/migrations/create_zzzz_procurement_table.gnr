@@ -1,0 +1,69 @@
+migration CreateProcurementTable {
+    up() {
+        Table::create('suppliers', (table) => {
+            table.id();
+            table.string('code', 32).unique();
+            table.string('name', 128);
+            table.boolean('active');
+            table.timestamps();
+        });
+        Table::create('purchase_orders', (table) => {
+            table.id();
+            table.string('po_number', 48).unique();
+            table.foreignId('supplier_id');
+            table.foreignId('created_by');
+            table.string('status', 24);
+            table.timestamps();
+            table.foreign('supplier_id').references('id').on('suppliers');
+            table.foreign('created_by').references('id').on('users');
+        });
+        Table::create('purchase_order_lines', (table) => {
+            table.id();
+            table.foreignId('purchase_order_id');
+            table.foreignId('product_id');
+            table.string('line_key', 64).unique();
+            table.integer('ordered_quantity');
+            table.integer('received_quantity');
+            table.integer('unit_price_minor');
+            table.timestamps();
+            table.foreign('purchase_order_id').references('id').on('purchase_orders');
+            table.foreign('product_id').references('id').on('products');
+        });
+        Table::create('purchase_order_approvals', (table) => {
+            table.id();
+            table.foreignId('purchase_order_id').unique();
+            table.foreignId('actor_id');
+            table.timestamps();
+            table.foreign('purchase_order_id').references('id').on('purchase_orders');
+            table.foreign('actor_id').references('id').on('users');
+        });
+        Table::create('purchase_receipts', (table) => {
+            table.id();
+            table.string('reference', 64).unique();
+            table.foreignId('purchase_order_id');
+            table.foreignId('line_id');
+            table.foreignId('product_id');
+            table.foreignId('location_id');
+            table.foreignId('actor_id');
+            table.integer('quantity');
+            table.integer('line_received_after');
+            table.integer('stock_after');
+            table.integer('location_after');
+            table.timestamps();
+            table.foreign('purchase_order_id').references('id').on('purchase_orders');
+            table.foreign('line_id').references('id').on('purchase_order_lines');
+            table.foreign('product_id').references('id').on('products');
+            table.foreign('location_id').references('id').on('warehouse_locations');
+            table.foreign('actor_id').references('id').on('users');
+            table.foreign('reference').references('reference').on('inventory_operations');
+        });
+    }
+
+    down() {
+        Table::dropIfExists('purchase_receipts');
+        Table::dropIfExists('purchase_order_approvals');
+        Table::dropIfExists('purchase_order_lines');
+        Table::dropIfExists('purchase_orders');
+        Table::dropIfExists('suppliers');
+    }
+}

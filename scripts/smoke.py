@@ -6,6 +6,7 @@ import pathlib
 import re
 import signal
 import subprocess
+from smoke_process import stop
 import sys
 import time
 import urllib.error
@@ -122,16 +123,7 @@ def main():
             print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
             raise
         finally:
-            if process.poll() is None:
-                if os.name == "nt":
-                    process.terminate()
-                else:
-                    os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait(timeout=5)
+            stop(process)
 
 
 if __name__ == "__main__":

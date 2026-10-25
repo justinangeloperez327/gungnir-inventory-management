@@ -9,7 +9,8 @@ def content(path):
 class WarehouseContractTests(unittest.TestCase):
     def test_additive_migration_and_fk(self):
         names=sorted(p.name for p in (ROOT/"database/migrations").glob("*.gnr"))
-        self.assertEqual(names[-1],"create_zzz_warehouse_locations_table.gnr")
+        self.assertEqual(names[-2:],["create_zzz_warehouse_locations_table.gnr",
+                                    "create_zzzz_procurement_table.gnr"])
         migration=content("database/migrations/create_zzz_warehouse_locations_table.gnr")
         for table in ("warehouses","warehouse_locations","location_balances",
                       "location_movements","warehouse_transfers",

@@ -71,6 +71,8 @@ jobs:
         run: python3 scripts/inventory_smoke.py
       - name: Verify warehouse transfers, allocations and reconciliation
         run: python3 scripts/warehouse_smoke.py
+      - name: Verify suppliers, purchase orders and atomic receiving
+        run: python3 scripts/procurement_smoke.py
 
   windows-application:
     name: Windows · native inventory acceptance
@@ -174,7 +176,7 @@ jobs:
       - name: Exercise authentication, catalogs, transactions and warehouses
         shell: pwsh
         run: |
-          foreach ($script in @('smoke.py', 'catalog_smoke.py', 'inventory_smoke.py', 'warehouse_smoke.py')) {
+          foreach ($script in @('smoke.py', 'catalog_smoke.py', 'inventory_smoke.py', 'warehouse_smoke.py', 'procurement_smoke.py')) {
               python "scripts/$script"
               if ($LASTEXITCODE -ne 0) { throw "Windows HTTP smoke failure: $script" }
           }

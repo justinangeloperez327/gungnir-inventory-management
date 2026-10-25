@@ -1,0 +1,15 @@
+model PurchaseReceipt {
+    table = 'purchase_receipts';
+    timestamps = true;
+    fillable = ['reference', 'purchase_order_id', 'line_id', 'product_id', 'location_id', 'actor_id', 'quantity', 'line_received_after', 'stock_after', 'location_after'];
+    string reference;
+    int purchase_order_id;
+    int line_id;
+    int product_id;
+    int location_id;
+    int actor_id;
+    int quantity;
+    int line_received_after;
+    int stock_after;
+    int location_after;
+}

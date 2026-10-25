@@ -1,0 +1,11 @@
+model PurchaseOrderLine {
+    table = 'purchase_order_lines';
+    timestamps = true;
+    fillable = ['purchase_order_id', 'product_id', 'line_key', 'ordered_quantity', 'received_quantity', 'unit_price_minor'];
+    int purchase_order_id;
+    int product_id;
+    string line_key;
+    int ordered_quantity;
+    int received_quantity;
+    int unit_price_minor;
+}

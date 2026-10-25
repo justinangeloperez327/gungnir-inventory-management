@@ -6,6 +6,7 @@ import os
 import signal
 import sqlite3
 import subprocess
+from smoke_process import stop
 import sys
 import time
 from catalog_smoke import client, call, login, assert_code
@@ -213,16 +214,7 @@ def main():
             print(logfile.read_text(encoding="utf-8"), file=sys.stderr)
             raise
         finally:
-            if proc.poll() is None:
-                if os.name == "nt":
-                    proc.terminate()
-                else:
-                    os.killpg(proc.pid, signal.SIGTERM)
-                try:
-                    proc.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                    proc.wait(timeout=5)
+            stop(proc)
 
 
 if __name__ == "__main__":
