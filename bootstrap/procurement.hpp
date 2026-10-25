@@ -164,7 +164,7 @@ inline Response create_order(Request& request) {
                 "(po_number,supplier_id,created_by,status,created_at,updated_at) "
                 "VALUES (?,?,?,'draft',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
                 {number,supplier,actor});
-            const std::int64_t po=*created.inserted_id;
+            const std::int64_t po=gungnir::model::value_cast<gungnir::Int64>(*created.inserted_id);
             for (const auto& line:lines) {
                 const auto key=std::to_string(po)+":"+std::to_string(line.product);
                 conn->execute(
